@@ -1,0 +1,9 @@
+boto3
+spacy
+fastapi
+python-dotenv
+psycopg2-binary
+pydantic
+pandas
+openpyxl
+reportlab

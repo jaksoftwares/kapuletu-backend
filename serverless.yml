@@ -1,0 +1,44 @@
+service: kapuletu-backend
+
+provider:
+  name: aws
+  runtime: python3.9
+  region: us-east-1
+  environment:
+    DATABASE_URL: ${env:DATABASE_URL}
+
+functions:
+  ingestion:
+    handler: services/ingestion/handler.handler
+    events:
+      - http:
+          path: ingestion
+          method: post
+  
+  approval:
+    handler: services/approval/handler.handler
+    events:
+      - http:
+          path: approval
+          method: post
+
+  reporting:
+    handler: services/reporting/handler.handler
+    events:
+      - http:
+          path: reporting
+          method: post
+
+  members:
+    handler: services/members/handler.handler
+    events:
+      - http:
+          path: members
+          method: any
+
+  campaigns:
+    handler: services/campaigns/handler.handler
+    events:
+      - http:
+          path: campaigns
+          method: any
