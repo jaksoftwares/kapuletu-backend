@@ -1,52 +1,65 @@
 import json
-import uuid
-from services.ingestion.parser_engine import parse_message
-from services.ingestion.validators import validate_payload
+import logging
 from common.database import SessionLocal
-from models.pending_transaction import PendingTransaction
+from services.ingestion.service import IngestionService
+from urllib.parse import parse_qs
+
+# Setup logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 def handler(event, context):
     """
-    Ingestion Handler:
-    Invoked by Twilio Webhook (via API Gateway)
+    Twilio Webhook Handler
     """
+    logger.info("Received Twilio Webhook")
+    
+    # 1. Extract Payload
+    # Twilio sends data as form-encoded by default
     body = event.get("body", "")
-    if isinstance(body, str):
-        body = json.loads(body)
+    is_base64 = event.get("isBase64Encoded", False)
     
-    if not validate_payload(body):
-        return {"statusCode": 400, "body": json.dumps({"error": "Invalid payload"})}
-    
-    message_text = body.get("message", "")
-    extracted_data = parse_message(message_text)
-    
-    db = SessionLocal()
-    try:
-        # Create a pending transaction record
-        # Note: In a production SaaS, we'd resolve the 'owner_id' 
-        # by looking up the phone number in our 'Groups' or 'Users' table.
+    if is_base64:
+        import base64
+        body = base64.b64decode(body).decode("utf-8")
         
-        pending = PendingTransaction(
-            pending_id=uuid.uuid4(),
-            raw_text=message_text,
-            amount=extracted_data.get("amount"),
-            sender_phone=extracted_data.get("phone"),
-            transaction_code=extracted_data.get("code") or f"TMP-{uuid.uuid4().hex[:8]}",
-            is_processed=False
-        )
-        
-        db.add(pending)
-        db.commit()
-        
+    # Parse form data OR json
+    if event.get("headers", {}).get("Content-Type") == "application/json":
+        payload = json.loads(body)
+    else:
+        # standard twilio x-www-form-urlencoded
+        payload = {k: v[0] for k, v in parse_qs(body).items()}
+
+    if not payload.get("Body"):
         return {
-            "statusCode": 201,
-            "body": json.dumps({
-                "message": "Ingestion successful",
-                "pending_id": str(pending.pending_id)
-            })
+            "statusCode": 400,
+            "body": json.dumps({"error": "Missing message body"})
         }
+
+    # 2. Database Session
+    db = SessionLocal()
+    
+    try:
+        # 3. Invoke Service
+        ingestion_service = IngestionService(db)
+        result = ingestion_service.process_webhook(payload)
+        
+        status_code = 201
+        if result["status"] == "ignored":
+            status_code = 200
+        elif result["status"] == "error":
+            status_code = 401 # Unauthorized phone
+
+        return {
+            "statusCode": status_code,
+            "body": json.dumps(result)
+        }
+        
     except Exception as e:
-        db.rollback()
-        return {"statusCode": 500, "body": json.dumps({"error": str(e)})}
+        logger.error(f"Unexpected error in ingestion handler: {e}", exc_info=True)
+        return {
+            "statusCode": 500,
+            "body": json.dumps({"error": "internal_server_error"})
+        }
     finally:
         db.close()
