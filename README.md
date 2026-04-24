@@ -260,6 +260,42 @@ alembic upgrade head
 - Admin	System-wide monitoring
 - Super Admin	Infrastructure and platform control
 
+
 **Final Summary**
 
 Kapuletu Backend is a serverless, event-driven financial orchestration system that transforms unstructured communication into structured, auditable, and immutable financial records—centered entirely around treasurer workflows.
+
+---
+
+## 🚀 CI/CD Pipeline
+
+The project uses **GitHub Actions** for automated testing, linting, and deployment.
+
+### 🌳 Branch Strategy & Environments
+| Branch | Environment | AWS Role | Deployment Stage |
+| :--- | :--- | :--- | :--- |
+| `dev` | Development | `kapuletu-ci-cd-role-dev` | `dev` |
+| `staging` | Staging | `kapuletu-ci-cd-role-staging` | `staging` |
+| `production` | Production | `kapuletu-ci-cd-role-prod` | `prod` |
+| `feature/*` | CI Only | N/A | No Deploy |
+
+### 🛠️ Pipeline Steps
+1. **Linting**: Uses `ruff` to ensure code quality and style consistency.
+2. **Testing**: Runs `pytest` for all service and common logic.
+3. **Packaging**: Validates the serverless package using `serverless package`.
+4. **Deployment**: Deploys to AWS Lambda using `serverless deploy`.
+
+### 🔐 Security (AWS OIDC)
+The pipeline uses **OpenID Connect (OIDC)** to authenticate with AWS. No long-lived AWS Access Keys are stored in GitHub Secrets. 
+Ensure the following secrets are configured in GitHub:
+- `AWS_ACCOUNT_ID`: Your AWS Account ID.
+
+### ⌨️ Manual Triggers
+You can manually trigger any deployment from the **Actions** tab in GitHub by selecting the workflow and clicking **Run workflow**.
+
+### ⚠️ Failure Handling
+The pipeline will fail and block deployment if:
+- Ruff finds linting issues.
+- Any Pytest cases fail.
+- `serverless package` validation fails.
+- AWS deployment fails.

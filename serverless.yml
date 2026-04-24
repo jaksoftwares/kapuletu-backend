@@ -2,10 +2,14 @@ service: kapuletu-backend
 
 provider:
   name: aws
-  runtime: python3.9
+  runtime: python3.11
   region: us-east-1
   environment:
+    STAGE: ${self:provider.stage}
     DATABASE_URL: ${env:DATABASE_URL}
+    SECRET_KEY: ${env:SECRET_KEY}
+    QLDB_LEDGER_NAME: ${env:QLDB_LEDGER_NAME}
+    TWILIO_SECRET: ${env:TWILIO_SECRET}
 
 functions:
   ingestion:
