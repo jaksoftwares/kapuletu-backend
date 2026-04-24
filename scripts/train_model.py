@@ -96,8 +96,8 @@ def train_and_save_model():
     # Save the model directly into the folder where parse_engine.py loads from
     nlp.to_disk(MODEL_OUTPUT_DIR)
     
-    logger.info(f"✅ Success! Training complete.")
-    logger.info(f"🚀 Model weights automatically deployed to: {MODEL_OUTPUT_DIR}")
+    logger.info(f"Success! Training complete.")
+    logger.info(f"Model weights automatically deployed to: {MODEL_OUTPUT_DIR}")
     logger.info("The Ingestion Service will now use these updated weights for all future messages.")
 
 if __name__ == "__main__":

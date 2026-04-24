@@ -1,4 +1,7 @@
-# models/__init__.py
+# KapuLetu Models Package
+# This module exposes all database entities and dataclasses used across the application.
+# It facilitates easy imports and ensures the SQLAlchemy Base is shared correctly.
+
 from .users import Base, User
 from .tenant import Group
 from .subscription import Plan, Subscription, UsageTracking
