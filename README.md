@@ -31,6 +31,8 @@ Twilio Webhooks – message ingestion
 
 
 **Backend Codebase Structure**
+
+```text
 kapuletu-backend/
 │
 ├── services/
@@ -48,6 +50,8 @@ kapuletu-backend/
 │
 ├── tests/                # NLP + workflow tests
 └── serverless.yml        # AWS Lambda deployment config
+
+```
 
 
 **End-to-End System Flow**
@@ -267,11 +271,13 @@ Kapuletu Backend is a serverless, event-driven financial orchestration system th
 
 ---
 
-## 🚀 CI/CD Pipeline
+## CI/CD Pipeline
 
 The project uses **GitHub Actions** for automated testing, linting, and deployment.
 
-### 🌳 Branch Strategy & Environments
+### Branch Strategy & Environments
+
+```text
 | Branch | Environment | AWS Role | Deployment Stage |
 | :--- | :--- | :--- | :--- |
 | `dev` | Development | `kapuletu-ci-cd-role-dev` | `dev` |
@@ -279,21 +285,23 @@ The project uses **GitHub Actions** for automated testing, linting, and deployme
 | `production` | Production | `kapuletu-ci-cd-role-prod` | `prod` |
 | `feature/*` | CI Only | N/A | No Deploy |
 
-### 🛠️ Pipeline Steps
+```
+
+### Pipeline Steps
 1. **Linting**: Uses `ruff` to ensure code quality and style consistency.
 2. **Testing**: Runs `pytest` for all service and common logic.
 3. **Packaging**: Validates the serverless package using `serverless package`.
 4. **Deployment**: Deploys to AWS Lambda using `serverless deploy`.
 
-### 🔐 Security (AWS OIDC)
+### Security (AWS OIDC)
 The pipeline uses **OpenID Connect (OIDC)** to authenticate with AWS. No long-lived AWS Access Keys are stored in GitHub Secrets. 
 Ensure the following secrets are configured in GitHub:
 - `AWS_ACCOUNT_ID`: Your AWS Account ID.
 
-### ⌨️ Manual Triggers
+### Manual Triggers
 You can manually trigger any deployment from the **Actions** tab in GitHub by selecting the workflow and clicking **Run workflow**.
 
-### ⚠️ Failure Handling
+### Failure Handling
 The pipeline will fail and block deployment if:
 - Ruff finds linting issues.
 - Any Pytest cases fail.

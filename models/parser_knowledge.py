@@ -4,18 +4,24 @@ import datetime
 
 class ParserKnowledge(Base):
     """
-    The permanent memory of the Ingestion AI.
-    Stores structural fingerprints and their successful mappings 
-    confirmed by treasurers.
+    ParserKnowledge Model: The permanent memory of the Ingestion AI.
+    
+    This table stores structural 'fingerprints' of financial messages that have 
+    been successfully parsed and confirmed by treasurers. It allows the AI 
+    to learn over time: if a message shape is seen repeatedly, the system 
+    increases its confidence score for that specific format.
     """
     __tablename__ = "parser_knowledge_base"
 
-    # The fingerprint represents the 'shape' of a message (e.g., 'UPPER word NUM for word')
+    # Fingerprint: A normalized representation of a message's structure 
+    # (e.g., 'TOKEN Confirmed. You have received Ksh NUM from NAME')
     fingerprint = Column(String, primary_key=True)
     
-    # Mapping logic: index positions of tokens for name, amount, etc.
-    # e.g., {"sender_name_indices": [0], "amount_index": 2}
+    # Mapping logic: Stores the specific index positions or regex groups 
+    # that reliably extract data for this specific fingerprint.
+    # Structure: {"sender_name_indices": [0], "amount_index": 2}
     mapping_logic = Column(JSON, nullable=False)
     
-    occurrence_count = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
-    success_count = Column(DateTime, default=datetime.datetime.utcnow) # Track reliability
+    # Track the popularity and reliability of this message pattern
+    last_seen = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+    discovery_date = Column(DateTime, default=datetime.datetime.utcnow)

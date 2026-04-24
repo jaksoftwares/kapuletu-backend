@@ -9,17 +9,37 @@ from typing import Dict, Any, Optional
 logger = logging.getLogger(__name__)
 
 class IngestionService:
+    """
+    IngestionService: Orchestrates the transformation of raw webhook payloads 
+    into validated, structured 'Pending Transactions'.
+    
+    This service acts as the 'Gatekeeper', ensuring that only messages from 
+    authorized treasurers are processed and that no duplicate entries reach the database.
+    """
+    
     def __init__(self, db: Session):
+        """
+        Initializes the service with a database session.
+        Uses TransactionRepository for all data persistence and lookup logic.
+        """
         self.db = db
         self.repo = TransactionRepository(db)
 
     def process_webhook(self, raw_payload: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Main business logic for ingestion.
-        1. Resolve Treasurer (owner)
-        2. Parse Message
-        3. Enforce Idempotency
-        4. Persist to Pending Queue
+        Processes a raw message payload from Twilio.
+        
+        High-Level Workflow:
+        1. Authentication: Verifies the sender's phone number maps to a Treasurer.
+        2. Intelligence: Routes the text to the AI Parser Engine.
+        3. Security: Generates and checks idempotency keys to prevent double-billing/duplicates.
+        4. Persistence: Saves the result as a PendingTransaction in PostgreSQL.
+        
+        Args:
+            raw_payload (dict): The dictionary of data received from the webhook.
+            
+        Returns:
+            dict: Outcome of the processing (success, error, or ignored).
         """
         message_body = raw_payload.get("Body", "").strip()
         sender_phone = raw_payload.get("From", "")
@@ -27,29 +47,35 @@ class IngestionService:
         logger.info(f"Ingesting message from {sender_phone}: {message_body[:50]}...")
 
         # 1. Resolve Owner (Treasurer)
+        # Every transaction MUST belong to a treasurer. We use the phone number as the identifier.
         owner = self.repo.resolve_owner_by_phone(sender_phone)
         if not owner:
-            logger.warning(f"No treasurer found for phone: {sender_phone}")
+            logger.warning(f"Unauthorized Access: No treasurer found for phone: {sender_phone}")
             return {"status": "error", "message": "unauthorized_phone"}
 
         # 2. Parse Logic (AI + Regex Hybrid)
+        # The parser extracts sender name, amount, and transaction codes from the message text.
         parsed_data = parse_message(message_body)
         
-        # 3. Idempotency Check
-        # Primary: Transaction Code (e.g. QE771...)
-        # Secondary: Hash of (Owner + Body) for manual entries without codes
+        # 3. Idempotency Check (Duplicate Prevention)
+        # We ensure every transaction is processed EXACTLY once.
+        # Logic: 
+        # - Use the official M-Pesa/Bank transaction code if present.
+        # - If manual entry, generate a deterministic hash of the (Treasurer + Message Body).
         txn_code = parsed_data.get("transaction_code")
         if not txn_code:
-            # Fallback idempotency key: Hash the context
+            # Fallback idempotency key generation
             context_string = f"{owner.user_id}:{message_body}"
             txn_code = f"HASH-{hashlib.md5(context_string.encode()).hexdigest()[:12]}"
             parsed_data["transaction_code"] = txn_code
 
+        # Check if this code has already been seen in the system
         if self.repo.check_duplicate_transaction_code(txn_code):
-            logger.info(f"Duplicate entry detected (Code/Hash: {txn_code}). Ignoring.")
+            logger.info(f"Idempotency Trigger: Duplicate entry detected ({txn_code}). Skipping processing.")
             return {"status": "ignored", "message": "duplicate_entry", "code": txn_code}
 
         # 4. Create Pending Record
+        # We store the message in a 'Pending' state, awaiting treasurer review/approval.
         pending_txn = PendingTransaction(
             owner_id=owner.user_id,
             raw_message=message_body,
@@ -63,9 +89,10 @@ class IngestionService:
             workflow_status="pending"
         )
         
+        # Save to database
         saved_txn = self.repo.insert_pending_transaction(pending_txn)
         
-        logger.info(f"Successfully processed transaction. ID: {saved_txn.pending_id}, Confidence: {saved_txn.confidence_score}")
+        logger.info(f"Ingestion Successful: ID {saved_txn.pending_id} created with {saved_txn.confidence_score*100}% AI confidence.")
         
         return {
             "status": "success",
