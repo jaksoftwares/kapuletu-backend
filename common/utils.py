@@ -1,7 +1,7 @@
 import datetime
 import uuid
 
-def format_currency(amount: float) -> str:
+def format_currency(amount):
     """
     Converts a numeric amount into a standardized Kenyan Shillings currency string.
     
@@ -13,11 +13,11 @@ def format_currency(amount: float) -> str:
     """
     return f"KES {amount:,.2f}"
 
-def generate_id() -> str:
+def generate_id():
     """
     Generates a unique identifier using UUID4.
     
     Returns:
-        str: A version 4 Universally Unique Identifier string.
+        str: A version 4 Universally Unique Identifier.
     """
     return str(uuid.uuid4())
