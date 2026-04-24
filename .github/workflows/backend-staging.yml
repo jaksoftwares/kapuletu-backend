@@ -28,7 +28,7 @@ jobs:
       - name: 🐍 Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ env:PYTHON_VERSION }}
+          python-version: ${{ env.PYTHON_VERSION }}
           cache: 'pip'
 
       - name: 📦 Install Dependencies
@@ -60,10 +60,10 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/kapuletu-ci-cd-role-staging
-          aws-region: ${{ env:AWS_REGION }}
+          aws-region: ${{ env.AWS_REGION }}
 
       - name: 📦 Validate Package
-        run: serverless package --stage ${{ env:STAGE }}
+        run: serverless package --stage ${{ env.STAGE }}
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
@@ -71,7 +71,7 @@ jobs:
           TWILIO_SECRET: ${{ secrets.TWILIO_SECRET }}
 
       - name: 🚢 Deploy to AWS Lambda
-        run: serverless deploy --stage ${{ env:STAGE }} --verbose
+        run: serverless deploy --stage ${{ env.STAGE }} --verbose
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
@@ -81,6 +81,6 @@ jobs:
       - name: ✨ Deployment Summary
         run: |
           echo "### ✅ Deployment Successful" >> $GITHUB_STEP_SUMMARY
-          echo "- **Stage:** ${{ env:STAGE }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Region:** ${{ env:AWS_REGION }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Stage:** ${{ env.STAGE }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Region:** ${{ env.AWS_REGION }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY

@@ -29,7 +29,7 @@ jobs:
       - name: 🐍 Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ env:PYTHON_VERSION }}
+          python-version: ${{ env.PYTHON_VERSION }}
           cache: 'pip'
 
       - name: 📦 Install Dependencies
@@ -43,3 +43,8 @@ jobs:
 
       - name: 🧪 Run Tests (Pytest)
         run: pytest
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          QLDB_LEDGER_NAME: ${{ secrets.QLDB_LEDGER_NAME }}
+          TWILIO_SECRET: ${{ secrets.TWILIO_SECRET }}

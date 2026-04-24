@@ -23,12 +23,14 @@ jobs:
 
     steps:
       - name: 🛒 Checkout Code
+        # Fetches the latest source code from the repository
         uses: actions/checkout@v4
 
       - name: 🐍 Setup Python
+        # Configures the Python environment with caching for faster runs
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ env:PYTHON_VERSION }}
+          python-version: ${{ env.PYTHON_VERSION }}
           cache: 'pip'
 
       - name: 📦 Install Dependencies
@@ -54,16 +56,18 @@ jobs:
           node-version: '20'
 
       - name: ⚡ Install Serverless Framework
+        # Required for packaging and deploying AWS Lambda functions
         run: npm install -g serverless
 
       - name: 🔐 Configure AWS Credentials (OIDC)
+        # Authenticates securely with AWS using OpenID Connect (no keys needed)
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/kapuletu-ci-cd-role-dev
-          aws-region: ${{ env:AWS_REGION }}
+          aws-region: ${{ env.AWS_REGION }}
 
       - name: 📦 Validate Package
-        run: serverless package --stage ${{ env:STAGE }}
+        run: serverless package --stage ${{ env.STAGE }}
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
@@ -71,7 +75,7 @@ jobs:
           TWILIO_SECRET: ${{ secrets.TWILIO_SECRET }}
 
       - name: 🚢 Deploy to AWS Lambda
-        run: serverless deploy --stage ${{ env:STAGE }} --verbose
+        run: serverless deploy --stage ${{ env.STAGE }} --verbose
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
@@ -81,6 +85,6 @@ jobs:
       - name: ✨ Deployment Summary
         run: |
           echo "### ✅ Deployment Successful" >> $GITHUB_STEP_SUMMARY
-          echo "- **Stage:** ${{ env:STAGE }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Region:** ${{ env:AWS_REGION }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Stage:** ${{ env.STAGE }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Region:** ${{ env.AWS_REGION }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY

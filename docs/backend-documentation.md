@@ -158,12 +158,23 @@ Ensures system reliability:
 - test_reporting.py
 
 
-13. Utility Scripts
-seed_data.py: Populate test data
-migrate.py: Database migrations
+14. CI/CD Pipeline
+The system uses GitHub Actions for automated quality assurance and deployment.
 
+Key Features:
+- **Multi-environment support**: Dev, Staging, and Production stages.
+- **Automated Testing**: Runs pytest on every push and PR.
+- **Linting**: Uses Ruff to maintain high code quality standards.
+- **Secure Authentication**: Uses AWS OIDC (OpenID Connect) for secure, keyless deployments.
+- **Branch Protection**: Enforces quality checks before merging into main branches.
 
-14. System Benefits
+Deployment Flow:
+- `dev` branch -> Deploys to AWS `dev` stage.
+- `staging` branch -> Deploys to AWS `staging` stage.
+- `production` branch -> Deploys to AWS `prod` stage.
+- `feature/*` branches -> Runs CI tests only.
+
+15. System Benefits
 - Reduced manual work
 - Improved accuracy
 - Strong auditability
