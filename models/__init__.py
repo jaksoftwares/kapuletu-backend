@@ -2,7 +2,8 @@
 # This module exposes all database entities and dataclasses used across the application.
 # It facilitates easy imports and ensures the SQLAlchemy Base is shared correctly.
 
-from .users import Base, User
+from .base import Base
+from .users import User
 from .tenant import Group
 from .subscription import Plan, Subscription, UsageTracking
 from .pending_transaction import PendingTransaction

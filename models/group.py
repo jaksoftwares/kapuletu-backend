@@ -1,3 +1,7 @@
+from sqlalchemy import Column, String, UUID
+
+from .base import Base
+
 class Group(Base):
     """
     Group Model: Represents a community organization or Chamas.

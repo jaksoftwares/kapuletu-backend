@@ -1,0 +1,66 @@
+[
+  {
+    "text": "UDLQC1OXZA Confirmed.You have received Ksh2,500.00 from DICKSON MWANIKI 0720000971 on 21/4/26",
+    "entities": [
+      [0, 10, "CODE"],
+      [44, 49, "AMOUNT"],
+      [55, 70, "SENDER"]
+    ]
+  },
+  {
+    "text": "MBNHE744DPQ8YUO8 Confirmed! You have received KES 10,000.00 from AMOS ILAVONGA SHIBUTSE - 131****711 at 2026-04-01 10:45:18 AM via KCB. Pata extra cash with a flexible Mobile Loan of up to KES 300K.",
+    "entities": [
+      [0, 16, "CODE"],
+      [50, 59, "AMOUNT"],
+      [65, 87, "SENDER"],
+      [90, 100, "ACCOUNT"],
+      [133, 136, "PROVIDER"]
+    ]
+  },
+  {
+    "text": "Ksh 300.00 sent to KCB account GRAPHICSPALACELTD 5848028 has been received on 24/04/2026 at 01:34 PM. M-PESA Ref UDORA1YWKR. To reverse this transaction, SMS this message to 16120.",
+    "entities": [
+      [4, 10, "AMOUNT"],
+      [19, 22, "PROVIDER"],
+      [31, 48, "SENDER"],
+      [49, 56, "ACCOUNT"],
+      [111, 121, "CODE"]
+    ]
+  },
+  {
+    "text": "Ksh 660.00 sent to KCB account GRAPHICSPALACELTD 5848028 has been received on 24/04/2026 at 04:58 PM. M-PESA Ref UDORA1ZJE2. To reverse this transaction, SMS this message to 16120.",
+    "entities": [
+      [4, 10, "AMOUNT"],
+      [19, 22, "PROVIDER"],
+      [31, 48, "SENDER"],
+      [49, 56, "ACCOUNT"],
+      [111, 121, "CODE"]
+    ]
+  },
+  {
+    "text": "[Forwarded] QED34XYZ98 Confirmed. You have sent Ksh 500 to KAPULETU WELFARE on 12/03/26 14:20 PM. New M-PESA balance is Ksh 12,000.",
+    "entities": [
+      [12, 22, "CODE"],
+      [52, 55, "AMOUNT"]
+    ]
+  },
+  {
+    "text": "Fwd: PK12345678 Confirmed. You have received Ksh 1,500.00 from JANE DOE 0712345678 on 12/10/25 at 9:00 AM. New M-PESA balance is Ksh 12,500.00.",
+    "entities": [
+      [5, 15, "CODE"],
+      [49, 57, "AMOUNT"],
+      [63, 71, "SENDER"],
+      [72, 82, "ACCOUNT"]
+    ]
+  },
+  {
+    "text": "Received Ksh 1,200 for welfare and 500 for roof from John",
+    "entities": [
+      [13, 18, "AMOUNT"],
+      [23, 30, "PURPOSE"],
+      [35, 38, "AMOUNT"],
+      [43, 47, "PURPOSE"],
+      [53, 57, "SENDER"]
+    ]
+  }
+]

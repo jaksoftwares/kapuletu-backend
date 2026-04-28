@@ -1,3 +1,7 @@
+from sqlalchemy import Column, String, Integer
+
+from .base import Base
+
 class AuditLog(Base):
     """
     AuditLog Model: Tracks all administrative actions within the system.
@@ -12,4 +16,4 @@ class AuditLog(Base):
     # The action performed
     action = Column(String)
     # The category of the entity affected (e.g. 'USER', 'PLAN', 'GROUP')
-    entity_type = Column(String)
+    entity_type = Column(String)

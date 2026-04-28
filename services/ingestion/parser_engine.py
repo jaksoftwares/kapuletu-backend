@@ -57,8 +57,14 @@ class ModelBasedParser:
         Returns:
             dict: Structured data containing amount, transaction_code, sender_name, purpose.
         """
-        # Run the NLP pipeline
-        doc = self.nlp(message_text)
+        # Run the NLP pipeline with error handling
+        try:
+            doc = self.nlp(message_text)
+        except Exception as e:
+            logger.error(f"AI Core Runtime Error: {e}. Falling back to heuristics.")
+            # Create a blank doc if model fails
+            doc = spacy.blank("en")(message_text)
+            self.is_trained = False
         
         # Initialize the data schema
         data = {

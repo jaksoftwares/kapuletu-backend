@@ -1,8 +1,8 @@
-from sqlalchemy import Column, String, UUID, ForeignKey, DateTime
+from sqlalchemy import Column, String, UUID, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
-from .users import Base
 import datetime
 import uuid
+from .base import Base
 
 class Group(Base):
     """

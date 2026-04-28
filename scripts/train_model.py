@@ -1,5 +1,6 @@
 import os
 import sys
+import json
 import logging
 import spacy
 from spacy.tokens import DocBin
@@ -8,33 +9,32 @@ from spacy.util import filter_spans
 # Configuration: Automatic Path Resolution
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MODEL_OUTPUT_DIR = os.path.join(BASE_DIR, "models", "kapuletu_ai_v1")
+DATASET_PATH = os.path.join(BASE_DIR, "data", "training_dataset.json")
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# COMPREHENSIVE TRAINING DATASET
-TRAIN_DATA = [
-     # 1. MPESA Templates
-    ("UDLQC1OXZA Confirmed.You have received Ksh2,500.00 from DICKSON MWANIKI 0720000971 on 21/4/26", {"entities": [(0, 10, "CODE"), (44, 49, "AMOUNT"), (55, 70, "SENDER")]}),
-    ("OBIT19DJS2 Confirmed. Ksh 1,200.00 sent to JANE DOE 0711222333 on 15/4/26", {"entities": [(0, 10, "CODE"), (26, 31, "AMOUNT"), (43, 51, "SENDER")]}),
-    
-    # 2. Airtel Money
-    ("Confirmed! You have received Ksh 1,000 from AIRTEL-MONEY. Ref: AM229988", {"entities": [(34, 39, "AMOUNT"), (64, 72, "CODE")]}),
-    
-    # 3. Bank Credits
-    ("Equity Bank: Credit of KES 15,000.00 from SAMUEL NJOROGE. Ref: 123456789.", {"entities": [(25, 34, "AMOUNT"), (42, 56, "SENDER"), (64, 73, "CODE")]}),
-    ("KCB Alert: Ksh 5,500.00 deposited by MARY WANGUI. Bal: Ksh 12,000.00", {"entities": [(15, 20, "AMOUNT"), (37, 48, "SENDER")]}),
-    
-    # 4. Informal/Manual Messages
-    ("John Doe sent 1500 for roof welfare", {"entities": [(0, 8, "SENDER"), (14, 18, "AMOUNT"), (23, 35, "PURPOSE")]}),
-    ("Mary contribution for church roof 2500", {"entities": [(0, 4, "SENDER"), (18, 29, "PURPOSE"), (34, 38, "AMOUNT")]}),
-    ("Roof 5000 Peter", {"entities": [(0, 4, "PURPOSE"), (5, 9, "AMOUNT"), (10, 15, "SENDER")]}),
-    ("Contribution 1000 maina", {"entities": [(0, 12, "PURPOSE"), (13, 17, "AMOUNT"), (18, 23, "SENDER")]}),
-    
-    # 5. Complex/Double Entries
-    ("Received Ksh 1,200 for welfare and 500 for roof from John", {"entities": [(13, 18, "AMOUNT"), (23, 30, "PURPOSE"), (35, 38, "AMOUNT"), (43, 47, "PURPOSE"), (53, 57, "SENDER")]}),
-]
+# DYNAMIC DATASET LOADING
+def load_dataset(filepath):
+    """Loads the training dataset from the standardized JSON format."""
+    if not os.path.exists(filepath):
+        logger.error(f"Dataset not found at {filepath}. Please create it to proceed.")
+        sys.exit(1)
+        
+    with open(filepath, 'r', encoding='utf-8') as f:
+        raw_data = json.load(f)
+        
+    logger.info(f"Loaded {len(raw_data)} samples from {filepath}")
+    train_data = []
+    for item in raw_data:
+        # Convert JSON structure to SpaCy tuple format: ("text", {"entities": [(start, end, "LABEL")]})
+        entities = [(ent[0], ent[1], ent[2]) for ent in item.get("entities", [])]
+        train_data.append((item["text"], {"entities": entities}))
+        
+    return train_data
+
+TRAIN_DATA = load_dataset(DATASET_PATH)
 
 def train_and_save_model():
     """
@@ -54,10 +54,18 @@ def train_and_save_model():
     """
     logger.info("KapuLetu AI Core: Initiating high-accuracy training pipeline...")
 
-    # 1. Initialize Blank Model
-    # We start from scratch to ensure the model is lightweight and focused only 
-    # on our specific domain (Kenyan financial messages).
-    nlp = spacy.blank("en")
+    # 1. Initialize Model
+    # Choose whether to start from scratch or build upon a professional pre-trained base model.
+    # To use a professional base model, set this to e.g., "en_core_web_md" or "en_core_web_trf".
+    # (Note: you must install the base model first: `python -m spacy download en_core_web_md`)
+    base_model = None 
+    
+    if base_model:
+        logger.info(f"Loading professional base model: {base_model}")
+        nlp = spacy.load(base_model)
+    else:
+        logger.info("Initializing a fast, lightweight blank English model.")
+        nlp = spacy.blank("en")
     if "ner" not in nlp.pipe_names:
         ner = nlp.add_pipe("ner")
     else:

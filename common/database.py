@@ -18,7 +18,7 @@ engine = create_engine(
     # max_overflow: The number of additional connections that can be created if the pool is full.
     max_overflow=10,
     # SSL is required for production RDS instances but disabled for local development.
-    connect_args={"sslmode": "require"} if "localhost" not in config.DATABASE_URL else {}
+    connect_args={"sslmode": "require"} if all(h not in config.DATABASE_URL for h in ["localhost", "127.0.0.1"]) else {}
 )
 
 # SessionLocal is the factory for individual database sessions.

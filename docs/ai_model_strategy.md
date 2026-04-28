@@ -1,29 +1,44 @@
-# 🧠 Kapuletu AI: Transitioning to a Trainable Model (NER)
+# KapuLetu AI Parser Strategy
 
-## 1. Concept: Rule-Based vs. Model-Based
-- **Previous Approach**: Rule-based (Regex) + Memory (Fingerprints). Fast, but requires manual pattern definitions.
-- **New Approach**: **Machine Learning (NER - Named Entity Recognition)**. The system is "fed" thousands of labeled messages and learns to identify 'SENDER', 'AMOUNT', and 'CODE' based on context and syntax, not just fixed positions.
+This document confirms the integration of the custom-trained AI model into the financial ingestion pipeline and outlines the roadmap for achieving 100% parsing accuracy.
 
-## 2. The Training Pipeline
-To achieve "101% accuracy" with high data volumes, we implement a training loop:
+---
 
-1.  **Data Collection**: Every message corrected by a Treasurer is saved as a **Labled Training Example**.
-2.  **Model Training (Spacy/CRF)**: An offline process (or a heavier Lambda) reads these examples and trains a weights-based model.
-3.  **Model Deployment**: The updated model (`model_v2.bin`) is pushed to the Ingestion Service, replacing the regex-heavy logic.
+## 🧠 1. The Core Engine: `kapuletu_ai_v1`
 
-## 3. Revised AI Architecture
-The `parser_engine.py` will now follow this logic:
-1.  **Load Model**: Initialize the local Spacy/ML model.
-2.  **Token Classification**: Scan tokens and assign labels (`SENDER`, `AMOUNT`).
-3.  **Context Scoring**: Ensure the results make sense for a treasury context.
+The intelligence of the system is centered around a custom-trained **SpaCy Named Entity Recognition (NER)** model located in:
+`models/kapuletu_ai_v1/`
 
-## 4. Implementation Steps for Massive Scale
-| Phase | Action | Technology |
-| :--- | :--- | :--- |
-| **Data Labeling** | Export `pending_transactions` corrections | PostgreSQL -> JSONL |
-| **Model Building** | Train a Custom NER Model | Spacy / Scikit-Learn |
-| **Validation** | Verify against a test set (Hold-out data) | Precision/Recall Metrics |
-| **Inference** | Load model in `parser_engine.py` | `spacy.load()` |
+### How it is Used:
+- **Priority Loading**: The `IngestionService` automatically attempts to load this specific model upon initialization.
+- **Entity Extraction**: The model is trained to recognize four critical financial entities:
+  - `SENDER`: The person or organization sending funds.
+  - `AMOUNT`: The numerical value of the transaction.
+  - `CODE`: The unique M-Pesa/Bank reference code.
+  - `PURPOSE`: Contextual notes (e.g., "Welfare", "January Dues").
 
-> [!IMPORTANT]
-> To "train with huge data," we will provide a **Trainer Script** that consumes your historical message database and builds a proprietary model weights file. This file then lives inside your backend and delivers the "perfect" parsing you require.
+---
+
+## 🛡️ 2. The "Safety-First" Architecture
+
+To achieve the objective of **100% parsing accuracy**, we employ a hybrid strategy:
+
+1.  **AI Model (Primary)**: Handles the heavy lifting of understanding unstructured language and context.
+2.  **Heuristic Fallback (Safeguard)**: If the AI model has low confidence or encounters a format it hasn't seen yet, the system automatically triggers a set of high-precision regex patterns.
+3.  **Treasurer Review**: All parsed data is stored in `pending_transactions`, allowing a human to verify and correct the AI's output before it is committed to the immutable ledger.
+
+---
+
+## 📈 3. Roadmap to 100% Accuracy
+
+Achieving 100% accuracy is an iterative process:
+
+### Data-Driven Training
+As you ingest real-world messages, the system collects "Raw Message" vs "Corrected Data" pairs. This dataset is then used to:
+- **Fine-tune the NER weights**.
+- **Reduce false positives** in the extraction logic.
+
+---
+
+## ✅ Confirmation
+I can confirm that the application is currently **wired to use the `models/kapuletu_ai_v1` model**. Every request processed through the `/ingestion` endpoint first attempts to use this AI Core before resorting to any other logic.

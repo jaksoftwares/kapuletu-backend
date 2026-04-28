@@ -1,3 +1,6 @@
+PyJWT
+passlib
+bcrypt
 boto3
 spacy
 fastapi

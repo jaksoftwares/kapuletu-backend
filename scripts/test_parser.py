@@ -1,60 +1,153 @@
 import sys
 import os
 import json
+import logging
 
-# Add project root to path so we can import our modules
+# Add project root to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from services.ingestion.parser_engine import parse_message
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+TEST_DATA_PATH = os.path.join(BASE_DIR, "data", "testing_dataset.json")
+
 def test_parser():
     """
-    Test Utility: Validates the AI Parsing Engine against real-world message samples.
-    
-    This script allows developers to quickly verify how the parser handles 
-    different message formats (MPESA, Bank Alerts, Informal Text) without 
-    running the full backend infrastructure.
+    Test Utility: Validates the AI Parsing Engine against the held-out testing dataset.
+    This performs a deep, comprehensive exam analysis across ALL extracted entities.
     """
-    # Sample real-world and synthetic financial messages
-    test_cases = [
-        # 1. Official MPESA Received (Standard Kenyan Pattern)
-        "UDLQC1OXZA Confirmed.You have received Ksh2,500.00 from DICKSON MWANIKI 0720000971 on 21/4/26 at 10:29 PM",
+    if not os.path.exists(TEST_DATA_PATH):
+        logger.error(f"Testing dataset not found at {TEST_DATA_PATH}. Run split_dataset.py first.")
+        sys.exit(1)
         
-        # 2. Official MPESA Sent (Outbound pattern)
-        "OIB819DJS2 Confirmed. Ksh 1,200.00 sent to JANE DOE 0711222333 on 15/4/26 at 11:00 AM.",
+    with open(TEST_DATA_PATH, 'r', encoding='utf-8') as f:
+        test_cases = json.load(f)
         
-        # 3. Informal/Manual Entry (Simple structured text)
-        "John Doe sent 1500 for welfare",
-        
-        # 4. Informal/Manual Entry (Reverse order)
-        "5000 from Mary for roof contribution",
-        
-        # 5. Bank Alert Style (Standard banking notification)
-        "Credit: KES 10,000.00 from PETER MAIN on 2026-04-20 14:00. Ref: TXN998877",
-        
-        # 6. Messy/Short Message (Ambiguous text)
-        "Roof contribution 2500 Peter",
-        
-        # 7. High Value / Currency variation (Normalization check)
-        "Ksh 150,000.00 from Welfare Fund"
-    ]
+    total_cases = len(test_cases)
+    if total_cases == 0:
+        logger.error("Testing dataset is empty.")
+        return
 
+    logger.info(f"Administering Comprehensive Final Exam: Testing against {total_cases} unseen messages...")
+    
+    # Dictionary to track performance across all entity types
+    metrics = {
+        "AMOUNT": {"correct": 0, "total": 0},
+        "CODE": {"correct": 0, "total": 0},
+        "SENDER": {"correct": 0, "total": 0},
+        "PROVIDER": {"correct": 0, "total": 0},
+        "ACCOUNT": {"correct": 0, "total": 0},
+        "PURPOSE": {"correct": 0, "total": 0}
+    }
+
+    print("\n" + "="*80)
+    print("      🔍 VISUAL INSPECTION (First 5 Messages) 🔍")
     print("="*80)
-    print(f"{'RAW MESSAGE':<50} | {'AMOUNT':<8} | {'NAME':<15} | {'CONF'}")
-    print("-"*80)
 
-    # Process each test case through the parser engine
-    for msg in test_cases:
+    for i, case in enumerate(test_cases):
+        msg = case["text"]
+        entities = case.get("entities", [])
+        
+        # Extract ground truth into a dictionary: {"AMOUNT": "500", "SENDER": "JOHN"}
+        expected = {}
+        for start, end, label in entities:
+            expected[label] = msg[start:end].strip()
+                
+        # Ask the AI to predict
         result = parse_message(msg)
         
-        name = str(result.get("sender_name"))[:15]
-        amount = result.get("amount", 0.0)
-        conf = result.get("confidence_score", 0.0)
-        
-        # Output results in a structured table for review
-        print(f"{msg[:50]:<50} | {amount:<8,.2f} | {name:<15} | {conf:.2f}")
+        # Grade EVERY expected label found in the json answer key
+        for label, exp_val in expected.items():
+            if label not in metrics:
+                metrics[label] = {"correct": 0, "total": 0}
+                
+            metrics[label]["total"] += 1
+            
+            # Mathematical evaluation logic based on entity type
+            if label == "AMOUNT":
+                exp_amt = exp_val.replace(",", "")
+                pred_amt = result.get("amount", 0.0)
+                try:
+                    if float(exp_amt) == float(pred_amt):
+                        metrics[label]["correct"] += 1
+                except ValueError:
+                    pass
+                    
+            elif label == "CODE":
+                pred_code = result.get("transaction_reference", "")
+                if pred_code and exp_val.upper() == str(pred_code).upper():
+                    metrics[label]["correct"] += 1
+                    
+            elif label == "SENDER":
+                pred_sender = result.get("sender_name", "")
+                # Allow partial matches for names since middle names might drop
+                if pred_sender and str(pred_sender).upper() in exp_val.upper():
+                    metrics[label]["correct"] += 1
+                    
+            elif label == "PROVIDER":
+                pred_provider = result.get("provider", "")
+                if pred_provider and exp_val.upper() in str(pred_provider).upper():
+                    metrics[label]["correct"] += 1
+                    
+            else:
+                # Catch-all for ACCOUNT, PURPOSE, etc.
+                pred_val = result.get(label.lower(), "")
+                if pred_val and exp_val.upper() == str(pred_val).upper():
+                    metrics[label]["correct"] += 1
 
+        # Print the first 5 samples for deep visual inspection
+        if i < 5:
+            print(f"\nMessage {i+1}:")
+            print(f"\"{msg}\"")
+            print("Parsed Output Object:")
+            print(f"  - Sender   : {result.get('sender_name')}")
+            print(f"  - Amount   : {result.get('amount')}")
+            print(f"  - Code     : {result.get('transaction_reference')}")
+            print(f"  - Provider : {result.get('provider', 'N/A')}")
+            print(f"  - Date     : {result.get('transaction_date', 'N/A')}")
+            print("-" * 50)
+
+    if total_cases > 5:
+        print(f"\n... and {total_cases - 5} more messages parsed and graded silently in the background.")
     print("="*80)
+
+    # Calculate final comprehensive accuracy percentages
+    print("\n" + "="*60)
+    print("      🏆 KAPULETU AI COMPREHENSIVE EXAM RESULTS 🏆")
+    print("="*60)
+    print(f"Total Messages Evaluated : {total_cases}")
+    print("-" * 60)
+    
+    total_correct = 0
+    total_tested = 0
+    
+    # Print metrics dynamically only for labels that were actually tested
+    for label, data in metrics.items():
+        if data["total"] > 0:
+            accuracy = (data["correct"] / data["total"]) * 100
+            print(f"{label:<15} Accuracy : {accuracy:6.1f}% ({data['correct']}/{data['total']} correct)")
+            total_correct += data["correct"]
+            total_tested += data["total"]
+            
+    print("-" * 60)
+    overall_accuracy = (total_correct / total_tested * 100) if total_tested > 0 else 0.0
+    print(f"OVERALL SYSTEM SCORE   : {overall_accuracy:6.1f}%")
+    print("="*60)
+    
+    # Strict truthful analysis
+    if overall_accuracy >= 98.0:
+        print("🟢 PRODUCTION READY: Outstanding performance across all fields!")
+    elif overall_accuracy >= 90.0:
+        print("🟡 ACCEPTABLE: Model is viable, but some specific fields (e.g., SENDER) may be dragging the score down. Review logs.")
+    elif overall_accuracy >= 75.0:
+        print("🟠 POOR PERFORMANCE: Model is missing key parameters. It has likely overfitted or needs more edge-case training data.")
+    else:
+        print("🔴 CRITICAL FAILURE: Accuracy is unacceptable for financial data. Do NOT deploy. Rebuild dataset.")
+        
+    print("="*60 + "\n")
 
 if __name__ == "__main__":
     test_parser()

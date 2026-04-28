@@ -1,3 +1,8 @@
+from sqlalchemy import Column, String, UUID, Boolean, DateTime, Numeric, Text
+import datetime
+import uuid
+from .base import Base
+
 from sqlalchemy import Column, String, UUID, Numeric, Text, Boolean, DateTime, Float
 from .users import Base
 import datetime

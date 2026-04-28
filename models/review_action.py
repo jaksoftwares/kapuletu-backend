@@ -1,3 +1,6 @@
+from sqlalchemy import Column, String, UUID
+from .base import Base
+
 class ReviewAction(Base):
     """
     ReviewAction Model: Tracks the history of actions taken on a pending transaction.

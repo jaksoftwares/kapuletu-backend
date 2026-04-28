@@ -1,8 +1,8 @@
-from sqlalchemy import Column, String, UUID, Numeric, ForeignKey, DateTime
+from sqlalchemy import Column, String, UUID, DateTime, ForeignKey, Numeric
 from sqlalchemy.orm import relationship
-from .users import Base
 import datetime
 import uuid
+from .base import Base
 
 class Transaction(Base):
     """

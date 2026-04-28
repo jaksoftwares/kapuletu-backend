@@ -1,9 +1,8 @@
 from sqlalchemy import Column, String, UUID, Boolean, ForeignKey, Numeric, DateTime
-from sqlalchemy.orm import declarative_base, relationship
+from sqlalchemy.orm import relationship
 import datetime
 import uuid
-
-Base = declarative_base()
+from .base import Base
 
 class User(Base):
     """
