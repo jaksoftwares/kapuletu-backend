@@ -31,8 +31,17 @@ def combine_and_split(train_ratio=0.8):
     real_data = load_json_safe(REAL_WORLD_PATH)
     synth_data = load_json_safe(SYNTHETIC_PATH)
     
-    combined_data = real_data + synth_data
-    total = len(combined_data)
+    # Extract 10 real samples to guarantee they are the ones printed in the final visual exam
+    if len(real_data) >= 10:
+        reserved_real = real_data[:10]
+        remaining_real = real_data[10:]
+    else:
+        logger.warning("Less than 10 real samples available.")
+        reserved_real = real_data[:]
+        remaining_real = []
+
+    combined_data = remaining_real + synth_data
+    total = len(combined_data) + len(reserved_real)
     
     if total == 0:
         logger.error("No data found! Run generate_synthetic_data.py first or add real_world_annotated.json.")
@@ -44,9 +53,12 @@ def combine_and_split(train_ratio=0.8):
     random.shuffle(combined_data)
     
     # 3. Calculate Split
-    split_index = int(total * train_ratio)
+    split_index = int(len(combined_data) * train_ratio)
     train_data = combined_data[:split_index]
     test_data = combined_data[split_index:]
+    
+    # Guarantee that the first 10 items in the test data are REAL WORLD samples (unseen by AI)
+    test_data = reserved_real + test_data
     
     # 4. Save to Disk
     with open(TRAIN_OUTPUT_PATH, 'w', encoding='utf-8') as f:

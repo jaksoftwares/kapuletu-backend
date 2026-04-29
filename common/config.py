@@ -17,7 +17,11 @@ class Config:
     QLDB_LEDGER_NAME: str = os.getenv("QLDB_LEDGER_NAME", "kapuletu-ledger")
     
     # Twilio Webhook Secret for signature validation (security layer)
-    TWILIO_SECRET: str = os.getenv("TWILIO_SECRET")
+    TWILIO_AUTH_TOKEN: str = os.getenv("TWILIO_AUTH_TOKEN", os.getenv("TWILIO_SECRET", ""))
+    
+    # Twilio credentials for sending WhatsApp notifications back to the Treasurer
+    TWILIO_ACCOUNT_SID: str = os.getenv("TWILIO_ACCOUNT_SID", "")
+    TWILIO_WHATSAPP_NUMBER: str = os.getenv("TWILIO_WHATSAPP_NUMBER", "")
 
 def get_config() -> Config:
     """

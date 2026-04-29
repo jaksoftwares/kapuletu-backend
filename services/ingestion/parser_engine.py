@@ -72,6 +72,9 @@ class ModelBasedParser:
             "amount": 0.0,
             "transaction_code": None,
             "purpose": None,
+            "provider": None,
+            "transaction_date": None,
+            "account": None,
             "confidence_score": 0.0
         }
 
@@ -86,6 +89,12 @@ class ModelBasedParser:
                 data["transaction_code"] = ent.text
             elif ent.label_ == "PURPOSE":
                 data["purpose"] = ent.text
+            elif ent.label_ == "PROVIDER":
+                data["provider"] = ent.text
+            elif ent.label_ == "DATE":
+                data["transaction_date"] = ent.text
+            elif ent.label_ == "ACCOUNT":
+                data["account"] = ent.text
 
         # 2. Heuristic Safeguard (Regex Fallback)
         # If the AI model missed critical fields (common with unstructured SMS),
@@ -124,15 +133,21 @@ class ModelBasedParser:
         Removes currency symbols, commas, and whitespace.
         """
         try:
-            # Clean string like "Ksh 1,200.50" -> 1200.50
-            clean_str = (amt_str.replace("Ksh", "")
-                               .replace("KES", "")
-                               .replace(",", "")
-                               .strip())
+            import re
+            clean_str = re.sub(r"[^\d.]", "", amt_str)
+            # Remove trailing/multiple dots if they appear by accident
+            if clean_str.count(".") > 1:
+                parts = clean_str.split(".")
+                clean_str = "".join(parts[:-1]) + "." + parts[-1]
             return float(clean_str)
         except (ValueError, TypeError):
             return 0.0
 
+_parser_instance = None
+
 def parse_message(message_text: str) -> Dict[str, Any]:
-    """Utility wrapper for one-off parsing calls."""
-    return ModelBasedParser().parse(message_text)
+    """Utility wrapper for one-off parsing calls using a cached singleton."""
+    global _parser_instance
+    if _parser_instance is None:
+        _parser_instance = ModelBasedParser()
+    return _parser_instance.parse(message_text)

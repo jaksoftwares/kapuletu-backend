@@ -93,8 +93,34 @@ def train_and_save_model():
         db.add(doc)
 
     # 4. Perform Training
-    # Note: In a production environment, this would involve multiple 'epochs'
-    # using nlp.begin_training() and optimizers.
+    import random
+    from spacy.training.example import Example
+    
+    logger.info("Starting deep learning training loop (10 Epochs)...")
+    optimizer = nlp.begin_training()
+    
+    # Train for 10 iterations
+    for itn in range(10):
+        random.shuffle(TRAIN_DATA)
+        losses = {}
+        # Batch up the examples using spaCy's minibatch
+        batches = spacy.util.minibatch(TRAIN_DATA, size=8)
+        for batch in batches:
+            examples = []
+            for text, annotations in batch:
+                doc = nlp.make_doc(text)
+                # Create an Example object (required for spaCy 3.x)
+                example = Example.from_dict(doc, annotations)
+                examples.append(example)
+                
+            # Update the model with the batch
+            nlp.update(
+                examples,  
+                drop=0.2,  # Dropout - makes it harder to memorise data
+                sgd=optimizer, # Stochastic gradient descent
+                losses=losses,
+            )
+        logger.info(f"Epoch {itn+1}/10 - Loss: {losses.get('ner', 0):.2f}")
     
     # 5. AUTOMATIC DEPLOYMENT
     # The model is saved directly into the production-mapped folder.

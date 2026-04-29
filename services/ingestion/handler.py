@@ -59,6 +59,15 @@ def handler(event, context):
             "body": json.dumps({"error": "Missing message body"})
         }
 
+    # WhatsApp Normalization
+    # Twilio prepends 'whatsapp:' to the 'From' and 'To' numbers if using the WhatsApp API.
+    # We strip this out so our user/treasurer matching logic works natively.
+    if payload.get("From", "").startswith("whatsapp:"):
+        payload["From"] = payload["From"].replace("whatsapp:", "")
+        
+    if payload.get("To", "").startswith("whatsapp:"):
+        payload["To"] = payload["To"].replace("whatsapp:", "")
+
     # 2. Database Session Initialization
     # SessionLocal is the SQLAlchemy session generator from common/database.py
     db = SessionLocal()

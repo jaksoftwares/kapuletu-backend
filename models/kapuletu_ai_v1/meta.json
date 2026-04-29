@@ -18,9 +18,11 @@
   },
   "labels":{
     "ner":[
+      "ACCOUNT",
       "AMOUNT",
       "CODE",
-      "PURPOSE",
+      "DATE",
+      "PROVIDER",
       "SENDER"
     ]
   },

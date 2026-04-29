@@ -3,6 +3,7 @@ from models.transaction import Transaction
 from models.pending_transaction import PendingTransaction
 from common.qldb import get_qldb_driver
 from common.logger import get_logger
+from services.ingestion.active_learner import log_for_active_learning
 
 logger = get_logger(__name__)
 
@@ -58,6 +59,19 @@ class ApprovalService:
         )
         self.db.add(new_txn)
         self.db.flush() # Flushes to DB to generate the transaction_id for the ledger record
+
+        # 2.5 Active Learning Hook
+        # Feed the ground truth (after potential treasurer edits) back into the AI loop
+        finalized_data = {
+            "amount": float(new_txn.amount) if new_txn.amount else None,
+            "sender_name": pending.sender_name,
+            "transaction_code": new_txn.transaction_code,
+            # If provider/date become fields later, map them here.
+        }
+        try:
+            log_for_active_learning(pending.raw_message, finalized_data)
+        except Exception as e:
+            logger.error(f"Active Learning Hook Failed: {e}")
 
         # 3. Write to QLDB (The immutable truth)
         # We write to the ledger BEFORE committing the SQL transaction.

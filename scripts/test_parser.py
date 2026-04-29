@@ -44,7 +44,7 @@ def test_parser():
     }
 
     print("\n" + "="*80)
-    print("      🔍 VISUAL INSPECTION (First 5 Messages) 🔍")
+    print("      --- VISUAL INSPECTION (First 10 Real-World Messages) ---")
     print("="*80)
 
     for i, case in enumerate(test_cases):
@@ -68,7 +68,12 @@ def test_parser():
             
             # Mathematical evaluation logic based on entity type
             if label == "AMOUNT":
-                exp_amt = exp_val.replace(",", "")
+                import re
+                # Strip out 'Ksh', 'KES', commas, and whitespace to extract the raw number
+                exp_amt = re.sub(r"[^\d.]", "", exp_val)
+                if exp_amt.count(".") > 1:
+                    parts = exp_amt.split(".")
+                    exp_amt = "".join(parts[:-1]) + "." + parts[-1]
                 pred_amt = result.get("amount", 0.0)
                 try:
                     if float(exp_amt) == float(pred_amt):
@@ -77,7 +82,7 @@ def test_parser():
                     pass
                     
             elif label == "CODE":
-                pred_code = result.get("transaction_reference", "")
+                pred_code = result.get("transaction_code", "")
                 if pred_code and exp_val.upper() == str(pred_code).upper():
                     metrics[label]["correct"] += 1
                     
@@ -92,31 +97,36 @@ def test_parser():
                 if pred_provider and exp_val.upper() in str(pred_provider).upper():
                     metrics[label]["correct"] += 1
                     
+            elif label == "DATE":
+                pred_date = result.get("transaction_date", "")
+                if pred_date and exp_val.upper() == str(pred_date).upper():
+                    metrics[label]["correct"] += 1
+                    
             else:
                 # Catch-all for ACCOUNT, PURPOSE, etc.
                 pred_val = result.get(label.lower(), "")
                 if pred_val and exp_val.upper() == str(pred_val).upper():
                     metrics[label]["correct"] += 1
 
-        # Print the first 5 samples for deep visual inspection
-        if i < 5:
+        # Print the first 10 samples for deep visual inspection (Guaranteed to be real data)
+        if i < 10:
             print(f"\nMessage {i+1}:")
             print(f"\"{msg}\"")
             print("Parsed Output Object:")
             print(f"  - Sender   : {result.get('sender_name')}")
             print(f"  - Amount   : {result.get('amount')}")
-            print(f"  - Code     : {result.get('transaction_reference')}")
+            print(f"  - Code     : {result.get('transaction_code')}")
             print(f"  - Provider : {result.get('provider', 'N/A')}")
             print(f"  - Date     : {result.get('transaction_date', 'N/A')}")
             print("-" * 50)
 
-    if total_cases > 5:
-        print(f"\n... and {total_cases - 5} more messages parsed and graded silently in the background.")
+    if total_cases > 10:
+        print(f"\n... and {total_cases - 10} more messages parsed and graded silently in the background.")
     print("="*80)
 
     # Calculate final comprehensive accuracy percentages
     print("\n" + "="*60)
-    print("      🏆 KAPULETU AI COMPREHENSIVE EXAM RESULTS 🏆")
+    print("      --- KAPULETU AI COMPREHENSIVE EXAM RESULTS ---")
     print("="*60)
     print(f"Total Messages Evaluated : {total_cases}")
     print("-" * 60)
@@ -139,13 +149,13 @@ def test_parser():
     
     # Strict truthful analysis
     if overall_accuracy >= 98.0:
-        print("🟢 PRODUCTION READY: Outstanding performance across all fields!")
+        print("[PASS] PRODUCTION READY: Outstanding performance across all fields!")
     elif overall_accuracy >= 90.0:
-        print("🟡 ACCEPTABLE: Model is viable, but some specific fields (e.g., SENDER) may be dragging the score down. Review logs.")
+        print("[WARN] ACCEPTABLE: Model is viable, but some specific fields (e.g., SENDER) may be dragging the score down. Review logs.")
     elif overall_accuracy >= 75.0:
-        print("🟠 POOR PERFORMANCE: Model is missing key parameters. It has likely overfitted or needs more edge-case training data.")
+        print("[FAIL] POOR PERFORMANCE: Model is missing key parameters. It has likely overfitted or needs more edge-case training data.")
     else:
-        print("🔴 CRITICAL FAILURE: Accuracy is unacceptable for financial data. Do NOT deploy. Rebuild dataset.")
+        print("[CRITICAL] CRITICAL FAILURE: Accuracy is unacceptable for financial data. Do NOT deploy. Rebuild dataset.")
         
     print("="*60 + "\n")
 
