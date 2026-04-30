@@ -78,18 +78,28 @@ def handler(event, context):
         ingestion_service = IngestionService(db)
         result = ingestion_service.process_webhook(payload)
         
-        # Determine HTTP status based on business outcome
-        status_code = 201
+        # Twilio expects a 200 OK response with TwiML XML to send a reply back to the user via WhatsApp/SMS.
+        # If we return a 4xx/5xx, Twilio will record a webhook error and the user receives nothing.
+        
         if result["status"] == "ignored":
-            # 200 OK for duplicates (prevents Twilio from retrying unnecessarily)
-            status_code = 200
+            reply_text = "⚠️ You have already submitted this transaction. It is currently pending review in your KapuLetu dashboard."
         elif result["status"] == "error":
-            # 401 if the phone number doesn't map to a registered treasurer
-            status_code = 401 
+            reply_text = "❌ Unauthorized: Your phone number is not registered as a treasurer for any KapuLetu group. Please contact an admin."
+        else:
+            parsed = result.get("parsed_data", {})
+            amt = f"KES {parsed.get('amount', 0.0):,.2f}" if parsed.get('amount') else "the transaction"
+            name = parsed.get("sender_name") or parsed.get("provider") or "the sender"
+            reply_text = f"✅ Success! We received {amt} from {name}. It is now pending your approval in the KapuLetu dashboard."
+
+        # Build standard TwiML XML
+        twiml_response = f'<?xml version="1.0" encoding="UTF-8"?><Response><Message>{reply_text}</Message></Response>'
 
         return {
-            "statusCode": status_code,
-            "body": json.dumps(result)
+            "statusCode": 200,
+            "headers": {
+                "Content-Type": "text/xml"
+            },
+            "body": twiml_response
         }
         
     except Exception as e:

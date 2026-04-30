@@ -94,6 +94,10 @@ class IngestionService:
         
         logger.info(f"Ingestion Successful: ID {saved_txn.pending_id} created with {saved_txn.confidence_score*100}% AI confidence.")
         
+        # Log the parsed output for developer visibility
+        import json
+        logger.info(f"Parsed Output:\n{json.dumps(parsed_data, indent=2)}")
+        
         return {
             "status": "success",
             "pending_id": str(saved_txn.pending_id),
