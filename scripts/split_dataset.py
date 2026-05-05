@@ -11,6 +11,7 @@ DATA_DIR = os.path.join(BASE_DIR, "data")
 
 REAL_WORLD_PATH = os.path.join(DATA_DIR, "real_world_annotated.json")
 SYNTHETIC_PATH = os.path.join(DATA_DIR, "synthetic_dataset.json")
+MERGED_ANNOTATED_PATH = os.path.join(DATA_DIR, "merged_annotated_dataset.json")
 TRAIN_OUTPUT_PATH = os.path.join(DATA_DIR, "training_dataset.json")
 TEST_OUTPUT_PATH = os.path.join(DATA_DIR, "testing_dataset.json")
 
@@ -30,6 +31,7 @@ def combine_and_split(train_ratio=0.8):
     logger.info("Loading datasets...")
     real_data = load_json_safe(REAL_WORLD_PATH)
     synth_data = load_json_safe(SYNTHETIC_PATH)
+    merged_data = load_json_safe(MERGED_ANNOTATED_PATH)
     
     # Extract 10 real samples to guarantee they are the ones printed in the final visual exam
     if len(real_data) >= 10:
@@ -40,14 +42,14 @@ def combine_and_split(train_ratio=0.8):
         reserved_real = real_data[:]
         remaining_real = []
 
-    combined_data = remaining_real + synth_data
+    combined_data = remaining_real + synth_data + merged_data
     total = len(combined_data) + len(reserved_real)
     
     if total == 0:
         logger.error("No data found! Run generate_synthetic_data.py first or add real_world_annotated.json.")
         return
         
-    logger.info(f"Combined {len(real_data)} real records and {len(synth_data)} synthetic records. Total: {total}")
+    logger.info(f"Combined {len(real_data)} real, {len(synth_data)} synthetic, and {len(merged_data)} new merged records. Total: {total}")
     
     # 2. Shuffle to ensure model doesn't learn ordering bias
     random.shuffle(combined_data)

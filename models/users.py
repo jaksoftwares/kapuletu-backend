@@ -18,14 +18,16 @@ class User(Base):
     user_id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     
     # Personal Information
-    full_name = Column(String, nullable=False)
+    first_name = Column(String, nullable=False)
+    last_name = Column(String, nullable=False)
     email = Column(String, unique=True, nullable=False)
     
     # Primary identifier for incoming webhook messages (Twilio/WhatsApp)
+    # Must be a verified WhatsApp number via Cognito Custom Sender
     phone_number = Column(String, unique=True, nullable=False)
     
-    # Security: Hashed password (never stored in plain text)
-    password_hash = Column(String, nullable=False)
+    # Security: Passwords are managed entirely by Amazon Cognito.
+    # We do NOT store password hashes in our local database anymore.
     
     # Permissions Role: Controls access to specific dashboard features
     # - treasurer: Manages specific groups
